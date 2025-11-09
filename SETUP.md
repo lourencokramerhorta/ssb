@@ -17,12 +17,18 @@ npm install
    - Go to Settings → API
    - Copy the "Project URL" and "anon public" key
 
-3. **Update `.env` file**:
-   Open the `.env` file in the root directory and add your credentials:
+3. **Set up `.env` file**:
    ```bash
+   # Copy the example file
+   cp .env.example .env
+   
+   # Then edit .env and add your credentials:
    SUPABASE_URL=your_supabase_project_url_here
    SUPABASE_ANON_KEY=your_supabase_anon_key_here
    ```
+   
+   **That's it!** The app will automatically read from `.env` via `app.config.js`.
+   No need to update `app.json` or `config.ts` - they read from `.env` automatically.
 
 ### 3. Configure Supabase Authentication
 

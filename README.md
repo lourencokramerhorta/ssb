@@ -34,11 +34,15 @@ npm run web      # Web browser
 2. Create a `.env` file in the root directory:
 
 ```bash
+# Copy the example file
+cp .env.example .env
+
+# Then edit .env and add your credentials:
 SUPABASE_URL=your_supabase_project_url
 SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-**Note**: The `.env` file is already created. Just add your credentials to it.
+**Note**: The `.env` file is gitignored and will not be committed. Your credentials are safe!
 
 ## Project Status
 

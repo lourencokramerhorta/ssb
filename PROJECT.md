@@ -113,12 +113,25 @@ ssb/
 
 ### Environment Variables
 
-Configuration is handled via a `.env` file. Create a `.env` file in the root directory with:
+Configuration is handled via a `.env` file (single source of truth).
 
-```bash
-SUPABASE_URL=your_supabase_project_url
-SUPABASE_ANON_KEY=your_supabase_anon_key
-```
+**Setup:**
+1. Copy `.env.example` to `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Add your Supabase credentials to `.env`:
+   ```bash
+   SUPABASE_URL=your_supabase_project_url
+   SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
+
+**How it works:**
+- `app.config.js` reads from `.env` at build time
+- Passes values to `expo.extra`
+- `config.ts` reads from `expo-constants` at runtime
+- **No need to update multiple files** - just `.env`!
 
 **To get your Supabase credentials:**
 1. Go to https://app.supabase.com

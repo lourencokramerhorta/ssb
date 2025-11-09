@@ -48,9 +48,9 @@ const getEnvVar = (key: string, fallback: string = ''): string => {
   return fallback;
 };
 
-// TODO: Configure your Supabase credentials in app.json under expo.extra
-// The anon key is safe to be public (it's meant for client-side use),
-// but for best practices, configure it via app.json or environment variables
+// Configuration reads from .env file via app.config.js
+// The .env file is loaded by app.config.js and passed to expo.extra
+// Then expo-constants makes it available here
 export const config = {
   supabase: {
     url: getEnvVar('SUPABASE_URL', ''),
