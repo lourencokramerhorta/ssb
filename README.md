@@ -1,50 +1,122 @@
-# Welcome to your Expo app 👋
+# Mobile-First App with Supabase
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A mobile-first application built with React Native/Expo and Supabase as the backend.
 
-## Get started
+## Quick Start
 
-1. Install dependencies
+### Prerequisites
+- Node.js (version TBD)
+- npm
+- Expo CLI (installed globally: `npm install -g expo`)
+- Supabase account and project
 
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+### Installation
 
 ```bash
-npm run reset-project
+# Dependencies are already installed
+# If needed, reinstall:
+npm install
+
+# Start the development server
+npm start
+
+# Or run on specific platform:
+npm run ios      # iOS simulator
+npm run android  # Android emulator
+npm run web      # Web browser
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### Environment Setup
 
-## Learn more
+1. Get your Supabase credentials from https://app.supabase.com
+   - Go to your project → Settings → API
+   - Copy the "Project URL" and "anon public" key
+2. Create a `.env` file in the root directory:
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+**Note**: The `.env` file is already created. Just add your credentials to it.
 
-## Join the community
+## Project Status
 
-Join our community of developers creating universal apps.
+🚧 **In Development** - Foundation phase
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+### Current Phase: Foundation
+- [x] Project initialization (Expo with Expo Router)
+- [x] TypeScript setup
+- [x] Project structure
+- [x] Supabase integration
+- [x] Authentication flow
+- [x] Homepage screen ("Hello World")
+- [x] Basic navigation with auth guards
+- [ ] Configure Supabase credentials
+- [ ] Test authentication flow
+
+## Features
+
+### Phase 1 (Current)
+- ✅ Email/Password authentication
+- ✅ User registration
+- ✅ User login
+- ✅ Session management
+- ✅ Protected routes
+- ✅ Homepage with "Hello World"
+- ✅ Supabase backend integration
+
+### Future Features
+- User profiles
+- Data submission
+- OAuth providers
+- Additional screens
+
+## Documentation
+
+For detailed project information, architecture, and development notes, see [PROJECT.md](./PROJECT.md).
+
+## Tech Stack
+
+- **Frontend**: React Native / Expo
+- **Backend**: Supabase (Auth, Database, API)
+- **Language**: TypeScript (strict mode)
+- **Navigation**: Expo Router (file-based routing)
+- **React**: 19.1.0
+- **React Native**: 0.81.5
+- **Expo SDK**: ~54.0.23
+
+## Development
+
+```bash
+# Start Expo development server
+npm start
+
+# Run on iOS simulator
+npm run ios
+
+# Run on Android emulator
+npm run android
+
+# Run on web
+npm run web
+
+# Lint code
+npm run lint
+```
+
+## Project Structure
+
+- `app/` - Expo Router file-based routing (screens)
+- `components/` - Reusable UI components
+- `constants/` - App constants and theme
+- `hooks/` - Custom React hooks
+- `services/` - API services and Supabase client (to be created)
+- `types/` - TypeScript type definitions (to be created)
+- `utils/` - Utility functions (to be created)
+- `assets/` - Images, fonts, and other assets
+
+## License
+
+[To be determined]
+

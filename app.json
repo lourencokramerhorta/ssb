@@ -43,6 +43,10 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "SUPABASE_URL": "",
+      "SUPABASE_ANON_KEY": ""
     }
   }
 }
