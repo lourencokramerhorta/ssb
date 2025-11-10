@@ -7,4 +7,10 @@ module.exports = defineConfig([
   {
     ignores: ['dist/*'],
   },
+  {
+    rules: {
+      // Disable apostrophe escaping rule - not needed in modern React/JSX
+      'react/no-unescaped-entities': 'off',
+    },
+  },
 ]);

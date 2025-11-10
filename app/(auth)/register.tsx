@@ -1,18 +1,32 @@
+import { Message } from '@/components/message';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useThemeColor } from '@/hooks/use-theme-color';
 import { signUp } from '@/services/auth';
 import { authStyles } from '@/styles/auth.styles';
 import { validateEmail, validatePassword } from '@/utils/validation';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, TextInput, TouchableOpacity } from 'react-native';
+import { ActivityIndicator, TextInput, TouchableOpacity } from 'react-native';
 
 export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: 'error' | 'success' | 'info' | 'warning'; text: string } | null>(null);
   const navigationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Get theme colors for input fields
+  const inputTextColor = useThemeColor({}, 'text');
+  const inputBackgroundColor = useThemeColor({}, 'background');
+  const inputBorderColor = useThemeColor({}, 'border');
+  const placeholderTextColor = useThemeColor({}, 'placeholder');
+  const colorScheme = useColorScheme() ?? 'light';
+  const primaryColor = Colors[colorScheme].primary;
+  const linkColor = Colors[colorScheme].primary;
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -24,27 +38,30 @@ export default function RegisterScreen() {
   }, []);
 
   const handleRegister = async () => {
+    // Clear previous message
+    setMessage(null);
+
     // Validate email
     const emailValidation = validateEmail(email);
     if (!emailValidation.isValid) {
-      Alert.alert('Error', emailValidation.message);
+      setMessage({ type: 'error', text: emailValidation.message });
       return;
     }
 
     if (!password || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
+      setMessage({ type: 'error', text: 'Please fill in all fields' });
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      setMessage({ type: 'error', text: 'Passwords do not match' });
       return;
     }
 
     // Validate password strength
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.isValid) {
-      Alert.alert('Error', passwordValidation.message);
+      setMessage({ type: 'error', text: passwordValidation.message });
       return;
     }
 
@@ -54,35 +71,32 @@ export default function RegisterScreen() {
       const { data, error } = await signUp(email.trim(), password);
 
       if (error) {
-        Alert.alert('Registration Failed', error);
+        setMessage({ type: 'error', text: error });
         return;
       }
 
       if (data?.user) {
-        // Show alert and navigate
-        Alert.alert(
-          'Success!',
-          'Account created successfully! You can now log in.',
-          [
-            {
-              text: 'Go to Login',
-              onPress: () => {
-                router.replace('/(auth)/login');
-              },
-            },
-          ],
-          { cancelable: false }
-        );
-        
-        // Also navigate after a short delay (in case Alert doesn't show on web)
-        navigationTimeoutRef.current = setTimeout(() => {
-          router.replace('/(auth)/login');
-        }, 2000);
+        // Check if email confirmation is required
+        if (data.requiresEmailConfirmation) {
+          // Navigate to email confirmation screen
+          router.replace({
+            pathname: '/(auth)/email-confirmation',
+            params: { email: email.trim() },
+          });
+        } else {
+          // Email confirmation not required, show success and navigate
+          setMessage({ type: 'success', text: 'Account created successfully! Redirecting to login...' });
+          
+          // Navigate after showing success message
+          navigationTimeoutRef.current = setTimeout(() => {
+            router.replace('/(auth)/login');
+          }, 2000);
+        }
       } else {
-        Alert.alert('Warning', 'Registration completed but no user data received.');
+        setMessage({ type: 'warning', text: 'Registration completed but no user data received.' });
       }
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'An unexpected error occurred');
+      setMessage({ type: 'error', text: err.message || 'An unexpected error occurred' });
     } finally {
       setLoading(false);
     }
@@ -95,50 +109,90 @@ export default function RegisterScreen() {
       </ThemedText>
 
       <TextInput
-        style={authStyles.input}
+        style={[
+          authStyles.input,
+          {
+            color: inputTextColor,
+            backgroundColor: inputBackgroundColor,
+            borderColor: inputBorderColor,
+          },
+        ]}
         placeholder="Email"
-        placeholderTextColor="#999"
+        placeholderTextColor={placeholderTextColor}
         value={email}
-        onChangeText={setEmail}
+        onChangeText={(text) => {
+          setEmail(text);
+          if (message) setMessage(null);
+        }}
         autoCapitalize="none"
         keyboardType="email-address"
         autoComplete="email"
       />
 
       <TextInput
-        style={authStyles.input}
+        style={[
+          authStyles.input,
+          {
+            color: inputTextColor,
+            backgroundColor: inputBackgroundColor,
+            borderColor: inputBorderColor,
+          },
+        ]}
         placeholder="Password"
-        placeholderTextColor="#999"
+        placeholderTextColor={placeholderTextColor}
         value={password}
-        onChangeText={setPassword}
+        onChangeText={(text) => {
+          setPassword(text);
+          if (message) setMessage(null);
+        }}
         secureTextEntry
         autoCapitalize="none"
         autoComplete="password"
       />
 
       <TextInput
-        style={authStyles.input}
+        style={[
+          authStyles.input,
+          {
+            color: inputTextColor,
+            backgroundColor: inputBackgroundColor,
+            borderColor: inputBorderColor,
+          },
+        ]}
         placeholder="Confirm Password"
-        placeholderTextColor="#999"
+        placeholderTextColor={placeholderTextColor}
         value={confirmPassword}
-        onChangeText={setConfirmPassword}
+        onChangeText={(text) => {
+          setConfirmPassword(text);
+          if (message) setMessage(null);
+        }}
         secureTextEntry
         autoCapitalize="none"
         autoComplete="password"
       />
 
+      {message && (
+        <Message 
+          type={message.type} 
+          message={message.text}
+          onDismiss={() => setMessage(null)}
+        />
+      )}
+
       <ThemedView style={authStyles.buttonContainer}>
         {loading ? (
-          <ActivityIndicator size="large" color="#007AFF" />
+          <ActivityIndicator size="large" color={primaryColor} />
         ) : (
-          <TouchableOpacity style={authStyles.button} onPress={handleRegister}>
+          <TouchableOpacity 
+            style={[authStyles.button, { backgroundColor: primaryColor }]} 
+            onPress={handleRegister}>
             <ThemedText style={authStyles.buttonText}>Register</ThemedText>
           </TouchableOpacity>
         )}
       </ThemedView>
 
       <ThemedText
-        style={authStyles.link}
+        style={[authStyles.link, { color: linkColor }]}
         onPress={() => router.push('/(auth)/login')}>
         Already have an account? Login
       </ThemedText>

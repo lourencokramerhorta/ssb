@@ -8,6 +8,7 @@ import { supabase } from './supabase';
 
 /**
  * Sign up a new user with email and password
+ * Returns information about whether email confirmation is required
  */
 export async function signUp(email: string, password: string) {
   try {
@@ -15,9 +16,17 @@ export async function signUp(email: string, password: string) {
       console.log('🔵 Supabase signUp called with email:', email);
     }
 
+    // Get the redirect URL based on platform
+    const redirectUrl = __DEV__ 
+      ? 'exp://localhost:8081/--/email-confirmed'
+      : 'ssb://email-confirmed';
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: redirectUrl,
+      },
     });
 
     if (__DEV__) {
@@ -27,6 +36,7 @@ export async function signUp(email: string, password: string) {
         error: error ? error.message : null,
         hasUser: !!data?.user,
         hasSession: !!data?.session,
+        emailConfirmed: !!data?.user?.email_confirmed_at,
       });
     }
 
@@ -37,7 +47,16 @@ export async function signUp(email: string, password: string) {
       throw error;
     }
 
-    return { data, error: null };
+    // Check if email confirmation is required
+    const requiresEmailConfirmation = data?.user && !data?.user.email_confirmed_at && !data?.session;
+
+    return { 
+      data: {
+        ...data,
+        requiresEmailConfirmation,
+      }, 
+      error: null 
+    };
   } catch (error: any) {
     if (__DEV__) {
       console.error('❌ signUp catch block:', error);
@@ -48,6 +67,7 @@ export async function signUp(email: string, password: string) {
 
 /**
  * Sign in an existing user with email and password
+ * Checks if email confirmation is required
  */
 export async function signIn(email: string, password: string) {
   try {
@@ -56,7 +76,26 @@ export async function signIn(email: string, password: string) {
       password,
     });
 
-    if (error) throw error;
+    if (error) {
+      // Check if error is due to unconfirmed email
+      if (error.message?.includes('Email not confirmed') || error.message?.includes('email_not_confirmed')) {
+        return { 
+          data: null, 
+          error: 'EMAIL_NOT_CONFIRMED',
+          requiresEmailConfirmation: true 
+        };
+      }
+      throw error;
+    }
+
+    // Double-check if user's email is confirmed (even if session exists)
+    if (data?.user && !data.user.email_confirmed_at) {
+      return { 
+        data: null, 
+        error: 'EMAIL_NOT_CONFIRMED',
+        requiresEmailConfirmation: true 
+      };
+    }
 
     return { data, error: null };
   } catch (error: any) {
@@ -123,6 +162,31 @@ export async function resetPassword(email: string) {
     return { data, error: null };
   } catch (error: any) {
     return { data: null, error: error.message || 'Failed to reset password' };
+  }
+}
+
+/**
+ * Resend email confirmation
+ */
+export async function resendConfirmationEmail(email: string) {
+  try {
+    // Get the redirect URL based on platform
+    const redirectUrl = __DEV__ 
+      ? 'exp://localhost:8081/--/email-confirmed'
+      : 'ssb://email-confirmed';
+
+    const { data, error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: {
+        emailRedirectTo: redirectUrl,
+      },
+    });
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error: any) {
+    return { data: null, error: error.message || 'Failed to resend confirmation email' };
   }
 }
 

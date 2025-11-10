@@ -1,12 +1,16 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Colors } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { commonStyles } from '@/styles/common.styles';
 import { router } from 'expo-router';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 
 export default function HomeScreen() {
   const { user, isAuthenticated, signOut } = useAuth();
+  const colorScheme = useColorScheme() ?? 'light';
+  const errorColor = Colors[colorScheme].error;
 
   const handleLogout = async () => {
     try {
@@ -32,7 +36,9 @@ export default function HomeScreen() {
           <ThemedText style={[commonStyles.subtitle, commonStyles.spacingLarge]}>
             Welcome, {user.email || 'User'}!
           </ThemedText>
-          <TouchableOpacity style={commonStyles.dangerButton} onPress={handleLogout}>
+          <TouchableOpacity 
+            style={[commonStyles.dangerButton, { backgroundColor: errorColor }]} 
+            onPress={handleLogout}>
             <ThemedText style={commonStyles.dangerButtonText}>Logout</ThemedText>
           </TouchableOpacity>
         </>
