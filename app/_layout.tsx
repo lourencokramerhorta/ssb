@@ -1,11 +1,13 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as Linking from 'expo-linking';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useAuth } from '@/hooks/use-auth';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { supabase } from '@/services/supabase';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -16,6 +18,50 @@ export default function RootLayout() {
   const { isAuthenticated, loading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+
+  // Handle email confirmation deep links
+  useEffect(() => {
+    const handleInitialURL = async () => {
+      const initialUrl = await Linking.getInitialURL();
+      if (initialUrl) {
+        handleEmailConfirmation(initialUrl);
+      }
+    };
+
+    const handleURL = (event: { url: string }) => {
+      handleEmailConfirmation(event.url);
+    };
+
+    const handleEmailConfirmation = async (url: string) => {
+      // Check if this is an email confirmation link
+      if (url.includes('email-confirmed') || url.includes('type=signup') || url.includes('token=') || url.includes('confirmation_token=')) {
+        // Supabase will handle the token verification automatically
+        // We just need to extract the URL and let Supabase process it
+        try {
+          // Parse the URL to extract query parameters
+          const urlObj = Linking.parse(url);
+          
+          // If there's a token in the URL, Supabase's auth state change listener will handle it
+          // We can navigate to a confirmation success screen or login
+          if (url.includes('email-confirmed') || urlObj.queryParams?.token || urlObj.queryParams?.confirmation_token) {
+            // Wait a moment for Supabase to process the token
+            setTimeout(() => {
+              router.replace('/(auth)/login');
+            }, 1000);
+          }
+        } catch (error) {
+          console.error('Error handling email confirmation URL:', error);
+        }
+      }
+    };
+
+    handleInitialURL();
+    const subscription = Linking.addEventListener('url', handleURL);
+
+    return () => {
+      subscription.remove();
+    };
+  }, [router]);
 
   useEffect(() => {
     if (loading) return;

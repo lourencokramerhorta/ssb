@@ -1,8 +1,10 @@
+import { Message } from '@/components/message';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { useThemeColor } from '@/hooks/use-theme-color';
 import { signIn } from '@/services/auth';
-import { validateEmail } from '@/utils/validation';
 import { authStyles } from '@/styles/auth.styles';
+import { validateEmail } from '@/utils/validation';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, TextInput, TouchableOpacity } from 'react-native';
@@ -11,37 +13,90 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  
+  // Get theme colors for input fields
+  const inputTextColor = useThemeColor({}, 'text');
+  const inputBackgroundColor = useThemeColor({}, 'background');
+  const inputBorderColor = useThemeColor(
+    { light: '#ddd', dark: '#444' },
+    'icon'
+  );
+  const placeholderTextColor = useThemeColor(
+    { light: '#999', dark: '#666' },
+    'icon'
+  );
 
   const handleLogin = async () => {
+    // Clear previous error
+    setErrorMessage(null);
+
     // Validate email
     const emailValidation = validateEmail(email);
     if (!emailValidation.isValid) {
-      Alert.alert('Error', emailValidation.message);
+      setErrorMessage(emailValidation.message);
       return;
     }
 
     if (!password) {
-      Alert.alert('Error', 'Password is required');
+      const errorMsg = 'Password is required';
+      setErrorMessage(errorMsg);
       return;
     }
 
     setLoading(true);
     try {
-      const { data, error } = await signIn(email.trim(), password);
+      const { data, error, requiresEmailConfirmation } = await signIn(email.trim(), password);
 
       if (error) {
-        Alert.alert('Login Failed', error);
+        // Check if error is due to unconfirmed email
+        const isEmailNotConfirmed = 
+          error === 'EMAIL_NOT_CONFIRMED' || 
+          requiresEmailConfirmation ||
+          error.toLowerCase().includes('email not confirmed') ||
+          error.toLowerCase().includes('email_not_confirmed');
+
+        if (isEmailNotConfirmed) {
+          const errorMsg = 'Please confirm your email address before logging in. Check your inbox for the confirmation email.';
+          setErrorMessage(errorMsg);
+          
+          Alert.alert(
+            'Email Not Confirmed',
+            errorMsg,
+            [
+              {
+                text: 'Resend Confirmation Email',
+                onPress: () => {
+                  router.push({
+                    pathname: '/(auth)/email-confirmation',
+                    params: { email: email.trim() },
+                  });
+                },
+              },
+              {
+                text: 'OK',
+                style: 'cancel',
+              },
+            ]
+          );
+        } else {
+          setErrorMessage(error);
+        }
         return;
       }
 
       if (data?.session) {
+        // Clear error and navigate
+        setErrorMessage(null);
         // Navigation will be handled by auth state change
         router.replace('/(tabs)');
       } else {
-        Alert.alert('Error', 'Login failed. Please try again.');
+        const errorMsg = 'Login failed. Please try again.';
+        setErrorMessage(errorMsg);
       }
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'An unexpected error occurred');
+      const errorMsg = err.message || 'An unexpected error occurred';
+      setErrorMessage(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -54,26 +109,56 @@ export default function LoginScreen() {
       </ThemedText>
 
       <TextInput
-        style={authStyles.input}
+        style={[
+          authStyles.input,
+          {
+            color: inputTextColor,
+            backgroundColor: inputBackgroundColor,
+            borderColor: inputBorderColor,
+          },
+        ]}
         placeholder="Email"
-        placeholderTextColor="#999"
+        placeholderTextColor={placeholderTextColor}
         value={email}
-        onChangeText={setEmail}
+        onChangeText={(text) => {
+          setEmail(text);
+          // Clear error when user starts typing
+          if (errorMessage) setErrorMessage(null);
+        }}
         autoCapitalize="none"
         keyboardType="email-address"
         autoComplete="email"
       />
 
       <TextInput
-        style={authStyles.input}
+        style={[
+          authStyles.input,
+          {
+            color: inputTextColor,
+            backgroundColor: inputBackgroundColor,
+            borderColor: inputBorderColor,
+          },
+        ]}
         placeholder="Password"
-        placeholderTextColor="#999"
+        placeholderTextColor={placeholderTextColor}
         value={password}
-        onChangeText={setPassword}
+        onChangeText={(text) => {
+          setPassword(text);
+          // Clear error when user starts typing
+          if (errorMessage) setErrorMessage(null);
+        }}
         secureTextEntry
         autoCapitalize="none"
         autoComplete="password"
       />
+
+      {errorMessage && (
+        <Message 
+          type="error" 
+          message={errorMessage}
+          onDismiss={() => setErrorMessage(null)}
+        />
+      )}
 
       <ThemedView style={authStyles.buttonContainer}>
         {loading ? (

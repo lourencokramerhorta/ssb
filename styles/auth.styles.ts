@@ -20,12 +20,11 @@ export const authStyles = StyleSheet.create({
   input: {
     height: 50,
     borderWidth: 1,
-    borderColor: '#ddd',
     borderRadius: 8,
     paddingHorizontal: 16,
     marginBottom: 16,
     fontSize: 16,
-    backgroundColor: '#fff',
+    // Note: backgroundColor, borderColor, and color should be set dynamically based on theme
   },
   buttonContainer: {
     marginTop: 8,
