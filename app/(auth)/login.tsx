@@ -1,6 +1,8 @@
 import { Message } from '@/components/message';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { signIn } from '@/services/auth';
 import { authStyles } from '@/styles/auth.styles';
@@ -18,14 +20,11 @@ export default function LoginScreen() {
   // Get theme colors for input fields
   const inputTextColor = useThemeColor({}, 'text');
   const inputBackgroundColor = useThemeColor({}, 'background');
-  const inputBorderColor = useThemeColor(
-    { light: '#ddd', dark: '#444' },
-    'icon'
-  );
-  const placeholderTextColor = useThemeColor(
-    { light: '#999', dark: '#666' },
-    'icon'
-  );
+  const inputBorderColor = useThemeColor({}, 'border');
+  const placeholderTextColor = useThemeColor({}, 'placeholder');
+  const colorScheme = useColorScheme() ?? 'light';
+  const primaryColor = Colors[colorScheme].primary;
+  const linkColor = Colors[colorScheme].primary;
 
   const handleLogin = async () => {
     // Clear previous error
@@ -162,16 +161,18 @@ export default function LoginScreen() {
 
       <ThemedView style={authStyles.buttonContainer}>
         {loading ? (
-          <ActivityIndicator size="large" color="#007AFF" />
+          <ActivityIndicator size="large" color={primaryColor} />
         ) : (
-          <TouchableOpacity style={authStyles.button} onPress={handleLogin}>
+          <TouchableOpacity 
+            style={[authStyles.button, { backgroundColor: primaryColor }]} 
+            onPress={handleLogin}>
             <ThemedText style={authStyles.buttonText}>Login</ThemedText>
           </TouchableOpacity>
         )}
       </ThemedView>
 
       <ThemedText
-        style={authStyles.link}
+        style={[authStyles.link, { color: linkColor }]}
         onPress={() => router.push('/(auth)/register')}>
         Dont have an account? Register
       </ThemedText>

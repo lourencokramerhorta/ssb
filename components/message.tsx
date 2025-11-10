@@ -1,9 +1,9 @@
 import { useThemeColor } from '@/hooks/use-theme-color';
-import { StyleSheet, View, Animated, Platform } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Animated, Platform, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
-import { useEffect, useRef } from 'react';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export type MessageType = 'error' | 'success' | 'info' | 'warning';
 
@@ -39,6 +39,15 @@ export function Message({
   const slideAnim = useRef(new Animated.Value(-200)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const insets = useSafeAreaInsets();
+  
+  // Store onDismiss in a ref to avoid re-running the effect when it changes
+  // This prevents the timeout from being reset on every render
+  const onDismissRef = useRef(onDismiss);
+  
+  // Update the ref when onDismiss changes
+  useEffect(() => {
+    onDismissRef.current = onDismiss;
+  }, [onDismiss]);
 
   useEffect(() => {
     // Slide in animation
@@ -71,67 +80,31 @@ export function Message({
           useNativeDriver: true,
         }),
       ]).start(() => {
-        onDismiss?.();
+        onDismissRef.current?.();
       });
     }, duration);
 
     return () => {
       clearTimeout(timer);
     };
-  }, [slideAnim, opacityAnim, duration, onDismiss]);
+  }, [slideAnim, opacityAnim, duration]);
   // Get theme colors for each message type
-  const errorColor = useThemeColor(
-    { light: '#FF3B30', dark: '#FF453A' },
-    'text'
-  );
-  const successColor = useThemeColor(
-    { light: '#34C759', dark: '#30D158' },
-    'text'
-  );
-  const infoColor = useThemeColor(
-    { light: '#007AFF', dark: '#0A84FF' },
-    'text'
-  );
-  const warningColor = useThemeColor(
-    { light: '#FF9500', dark: '#FF9F0A' },
-    'text'
-  );
+  const errorColor = useThemeColor({}, 'error');
+  const successColor = useThemeColor({}, 'success');
+  const infoColor = useThemeColor({}, 'info');
+  const warningColor = useThemeColor({}, 'warning');
 
   // Get background color for each message type
-  const errorBackgroundColor = useThemeColor(
-    { light: '#FFEBEE', dark: '#2D1B1E' },
-    'background'
-  );
-  const successBackgroundColor = useThemeColor(
-    { light: '#E8F5E9', dark: '#1B2D1E' },
-    'background'
-  );
-  const infoBackgroundColor = useThemeColor(
-    { light: '#E3F2FD', dark: '#1B1D2D' },
-    'background'
-  );
-  const warningBackgroundColor = useThemeColor(
-    { light: '#FFF3E0', dark: '#2D241B' },
-    'background'
-  );
+  const errorBackgroundColor = useThemeColor({}, 'errorBg');
+  const successBackgroundColor = useThemeColor({}, 'successBg');
+  const infoBackgroundColor = useThemeColor({}, 'infoBg');
+  const warningBackgroundColor = useThemeColor({}, 'warningBg');
 
   // Get border color for each message type
-  const errorBorderColor = useThemeColor(
-    { light: '#FFCDD2', dark: '#4A2A2E' },
-    'icon'
-  );
-  const successBorderColor = useThemeColor(
-    { light: '#C8E6C9', dark: '#2D4A2E' },
-    'icon'
-  );
-  const infoBorderColor = useThemeColor(
-    { light: '#BBDEFB', dark: '#2A2D4A' },
-    'icon'
-  );
-  const warningBorderColor = useThemeColor(
-    { light: '#FFE0B2', dark: '#4A3A2A' },
-    'icon'
-  );
+  const errorBorderColor = useThemeColor({}, 'errorBorder');
+  const successBorderColor = useThemeColor({}, 'successBorder');
+  const infoBorderColor = useThemeColor({}, 'infoBorder');
+  const warningBorderColor = useThemeColor({}, 'warningBorder');
 
   // Map type to colors
   const colorMap = {

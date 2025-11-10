@@ -2,6 +2,7 @@
  * Common Styles
  * 
  * Reusable styles used across the app
+ * Note: Colors that need theme awareness should be set dynamically in components
  */
 
 import { StyleSheet } from 'react-native';
@@ -27,33 +28,33 @@ export const commonStyles = StyleSheet.create({
   },
   
   // Buttons
+  // Note: backgroundColor should be set dynamically using Colors.light.primary or Colors.dark.primary
   primaryButton: {
-    backgroundColor: '#007AFF',
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
   },
   primaryButtonText: {
-    color: '#fff',
+    color: '#fff', // White text on colored button - consistent across themes
     fontSize: 16,
     fontWeight: '600',
   },
+  // Note: backgroundColor should be set dynamically using Colors.light.error or Colors.dark.error
   dangerButton: {
-    backgroundColor: '#FF3B30',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
   },
   dangerButtonText: {
-    color: '#fff',
+    color: '#fff', // White text on colored button - consistent across themes
     fontSize: 16,
     fontWeight: '600',
   },
   
   // Text
+  // Note: color should be set dynamically using Colors.light.primary or Colors.dark.primary
   linkText: {
     textAlign: 'center',
-    color: '#007AFF',
     fontSize: 14,
   },
   subtitle: {

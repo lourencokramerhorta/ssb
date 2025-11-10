@@ -6,12 +6,17 @@ import { authStyles } from '@/styles/auth.styles';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, TouchableOpacity } from 'react-native';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function EmailConfirmationScreen() {
   const params = useLocalSearchParams<{ email?: string }>();
   const email = params.email || '';
   const [resending, setResending] = useState(false);
   const [message, setMessage] = useState<{ type: 'error' | 'success' | 'info' | 'warning'; text: string } | null>(null);
+  const colorScheme = useColorScheme() ?? 'light';
+  const primaryColor = Colors[colorScheme].primary;
+  const linkColor = Colors[colorScheme].primary;
 
   const handleResendEmail = async () => {
     if (!email) {
@@ -70,16 +75,18 @@ export default function EmailConfirmationScreen() {
 
       <ThemedView style={authStyles.buttonContainer}>
         {resending ? (
-          <ActivityIndicator size="large" color="#007AFF" />
+          <ActivityIndicator size="large" color={primaryColor} />
         ) : (
-          <TouchableOpacity style={authStyles.button} onPress={handleResendEmail}>
+          <TouchableOpacity 
+            style={[authStyles.button, { backgroundColor: primaryColor }]} 
+            onPress={handleResendEmail}>
             <ThemedText style={authStyles.buttonText}>Resend Confirmation Email</ThemedText>
           </TouchableOpacity>
         )}
       </ThemedView>
 
       <ThemedText
-        style={authStyles.link}
+        style={[authStyles.link, { color: linkColor }]}
         onPress={() => router.replace('/(auth)/login')}>
         Already confirmed? Go to Login
       </ThemedText>
