@@ -34,9 +34,19 @@ const getEnvVar = (key: string, fallback: string = ''): string => {
     return String(Constants.manifest.extra[key]);
   }
 
-  // 3. Check Constants.manifest2?.extra (Expo SDK 49+)
+  // 3. Check Constants.manifest2?.extra?.expoClient?.extra (Expo SDK 49+)
   if (Constants.manifest2?.extra?.expoClient?.extra?.[key]) {
     return String(Constants.manifest2.extra.expoClient.extra[key]);
+  }
+
+  // 4. Check Constants.manifest2?.extra directly (alternative structure)
+  if (Constants.manifest2?.extra?.[key]) {
+    return String(Constants.manifest2.extra[key]);
+  }
+
+  // 5. Check Constants.manifest2?.extra?.expoClient directly
+  if (Constants.manifest2?.extra?.expoClient?.[key]) {
+    return String(Constants.manifest2.extra.expoClient[key]);
   }
 
   // Fallback: Check process.env (for development/testing)
@@ -57,25 +67,6 @@ export const config = {
     anonKey: getEnvVar('SUPABASE_ANON_KEY', ''),
   },
 };
-
-// Debug: Log what we're getting from Constants
-if (__DEV__) {
-  console.log('🔍 Config Debug - Constants:', {
-    hasExpoConfig: !!Constants.expoConfig,
-    hasManifest: !!Constants.manifest,
-    hasManifest2: !!Constants.manifest2,
-    expoConfigExtra: Constants.expoConfig?.extra,
-    manifestExtra: Constants.manifest?.extra,
-    manifest2Extra: Constants.manifest2?.extra,
-    allConstants: Object.keys(Constants),
-  });
-  console.log('🔍 Config Debug - Values:', {
-    supabaseUrl: config.supabase.url || 'MISSING',
-    supabaseKey: config.supabase.anonKey ? 'SET (hidden)' : 'MISSING',
-    urlLength: config.supabase.url?.length || 0,
-    keyLength: config.supabase.anonKey?.length || 0,
-  });
-}
 
 // Validate configuration
 if (!config.supabase.url || !config.supabase.anonKey) {
