@@ -17,7 +17,9 @@ export default function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'error' | 'success' | 'info' | 'warning'; text: string } | null>(null);
+  const [rateLimitCountdown, setRateLimitCountdown] = useState<number | null>(null);
   const navigationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   // Get theme colors for input fields
   const inputTextColor = useThemeColor({}, 'text');
@@ -28,14 +30,56 @@ export default function RegisterScreen() {
   const primaryColor = Colors[colorScheme].primary;
   const linkColor = Colors[colorScheme].primary;
 
-  // Cleanup timeout on unmount
+  // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
       if (navigationTimeoutRef.current) {
         clearTimeout(navigationTimeoutRef.current);
       }
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+      }
     };
   }, []);
+
+  // Handle countdown timer
+  useEffect(() => {
+    // Clear any existing interval first
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+
+    // Only start a new interval if countdown is set and greater than 0
+    if (rateLimitCountdown !== null && rateLimitCountdown > 0) {
+      countdownIntervalRef.current = setInterval(() => {
+        setRateLimitCountdown((prev) => {
+          if (prev === null || prev <= 1) {
+            if (countdownIntervalRef.current) {
+              clearInterval(countdownIntervalRef.current);
+              countdownIntervalRef.current = null;
+            }
+            // Clear rate limit message when countdown finishes
+            setMessage((msg) => {
+              if (msg?.type === 'warning') {
+                return null;
+              }
+              return msg;
+            });
+            return null;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
+    };
+  }, [rateLimitCountdown]);
 
   const handleRegister = async () => {
     // Clear previous message
@@ -68,10 +112,19 @@ export default function RegisterScreen() {
     setLoading(true);
     
     try {
-      const { data, error } = await signUp(email.trim(), password);
+      const { data, error, rateLimitInfo } = await signUp(email.trim(), password);
 
       if (error) {
-        setMessage({ type: 'error', text: error });
+        // Check if this is a rate limit error
+        if (rateLimitInfo?.isRateLimit) {
+          setRateLimitCountdown(rateLimitInfo.waitTime);
+          setMessage({ 
+            type: 'warning', 
+            text: rateLimitInfo.userFriendlyMessage 
+          });
+        } else {
+          setMessage({ type: 'error', text: error });
+        }
         return;
       }
 
@@ -174,8 +227,18 @@ export default function RegisterScreen() {
       {message && (
         <Message 
           type={message.type} 
-          message={message.text}
-          onDismiss={() => setMessage(null)}
+          message={
+            rateLimitCountdown !== null && rateLimitCountdown > 0
+              ? `${message.text} (${rateLimitCountdown}s)`
+              : message.text
+          }
+          duration={3000}
+          onDismiss={() => {
+            // Only clear message, but keep countdown running if it's still active
+            // The countdown will clear itself when it reaches 0
+            setMessage(null);
+            // Don't clear countdown here - let it run until it reaches 0
+          }}
         />
       )}
 
@@ -184,9 +247,20 @@ export default function RegisterScreen() {
           <ActivityIndicator size="large" color={primaryColor} />
         ) : (
           <TouchableOpacity 
-            style={[authStyles.button, { backgroundColor: primaryColor }]} 
-            onPress={handleRegister}>
-            <ThemedText style={authStyles.buttonText}>Register</ThemedText>
+            style={[
+              authStyles.button, 
+              { 
+                backgroundColor: primaryColor,
+                opacity: rateLimitCountdown !== null && rateLimitCountdown > 0 ? 0.5 : 1,
+              }
+            ]} 
+            onPress={handleRegister}
+            disabled={rateLimitCountdown !== null && rateLimitCountdown > 0}>
+            <ThemedText style={authStyles.buttonText}>
+              {rateLimitCountdown !== null && rateLimitCountdown > 0
+                ? `Please wait (${rateLimitCountdown}s)`
+                : 'Register'}
+            </ThemedText>
           </TouchableOpacity>
         )}
       </ThemedView>
