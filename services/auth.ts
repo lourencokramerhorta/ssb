@@ -4,6 +4,7 @@
  * This file contains all authentication-related functions using Supabase Auth.
  */
 
+import { parseRateLimitError } from '@/utils/validation';
 import { supabase } from './supabase';
 
 /**
@@ -55,13 +56,22 @@ export async function signUp(email: string, password: string) {
         ...data,
         requiresEmailConfirmation,
       }, 
-      error: null 
+      error: null,
+      rateLimitInfo: null,
     };
   } catch (error: any) {
     if (__DEV__) {
       console.error('❌ signUp catch block:', error);
     }
-    return { data: null, error: error.message || 'Failed to sign up' };
+    
+    // Check if this is a rate limit error
+    const rateLimitInfo = parseRateLimitError(error.message || '');
+    
+    return { 
+      data: null, 
+      error: rateLimitInfo?.userFriendlyMessage || error.message || 'Failed to sign up',
+      rateLimitInfo: rateLimitInfo || null,
+    };
   }
 }
 
@@ -82,7 +92,8 @@ export async function signIn(email: string, password: string) {
         return { 
           data: null, 
           error: 'EMAIL_NOT_CONFIRMED',
-          requiresEmailConfirmation: true 
+          requiresEmailConfirmation: true,
+          rateLimitInfo: null,
         };
       }
       throw error;
@@ -93,13 +104,21 @@ export async function signIn(email: string, password: string) {
       return { 
         data: null, 
         error: 'EMAIL_NOT_CONFIRMED',
-        requiresEmailConfirmation: true 
+        requiresEmailConfirmation: true,
+        rateLimitInfo: null,
       };
     }
 
-    return { data, error: null };
+    return { data, error: null, rateLimitInfo: null };
   } catch (error: any) {
-    return { data: null, error: error.message || 'Failed to sign in' };
+    // Check if this is a rate limit error
+    const rateLimitInfo = parseRateLimitError(error.message || '');
+    
+    return { 
+      data: null, 
+      error: rateLimitInfo?.userFriendlyMessage || error.message || 'Failed to sign in',
+      rateLimitInfo: rateLimitInfo || null,
+    };
   }
 }
 
@@ -184,9 +203,16 @@ export async function resendConfirmationEmail(email: string) {
     });
 
     if (error) throw error;
-    return { data, error: null };
+    return { data, error: null, rateLimitInfo: null };
   } catch (error: any) {
-    return { data: null, error: error.message || 'Failed to resend confirmation email' };
+    // Check if this is a rate limit error
+    const rateLimitInfo = parseRateLimitError(error.message || '');
+    
+    return { 
+      data: null, 
+      error: rateLimitInfo?.userFriendlyMessage || error.message || 'Failed to resend confirmation email',
+      rateLimitInfo: rateLimitInfo || null,
+    };
   }
 }
 

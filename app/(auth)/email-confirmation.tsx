@@ -1,22 +1,72 @@
+import { Message } from '@/components/message';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Message } from '@/components/message';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { resendConfirmationEmail } from '@/services/auth';
 import { authStyles } from '@/styles/auth.styles';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, TouchableOpacity } from 'react-native';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function EmailConfirmationScreen() {
   const params = useLocalSearchParams<{ email?: string }>();
   const email = params.email || '';
   const [resending, setResending] = useState(false);
   const [message, setMessage] = useState<{ type: 'error' | 'success' | 'info' | 'warning'; text: string } | null>(null);
+  const [rateLimitCountdown, setRateLimitCountdown] = useState<number | null>(null);
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const colorScheme = useColorScheme() ?? 'light';
   const primaryColor = Colors[colorScheme].primary;
   const linkColor = Colors[colorScheme].primary;
+
+  // Cleanup countdown interval on unmount
+  useEffect(() => {
+    return () => {
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+      }
+    };
+  }, []);
+
+  // Handle countdown timer
+  useEffect(() => {
+    // Clear any existing interval first
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+
+    // Only start a new interval if countdown is set and greater than 0
+    if (rateLimitCountdown !== null && rateLimitCountdown > 0) {
+      countdownIntervalRef.current = setInterval(() => {
+        setRateLimitCountdown((prev) => {
+          if (prev === null || prev <= 1) {
+            if (countdownIntervalRef.current) {
+              clearInterval(countdownIntervalRef.current);
+              countdownIntervalRef.current = null;
+            }
+            // Clear rate limit message when countdown finishes
+            setMessage((msg) => {
+              if (msg?.type === 'warning') {
+                return null;
+              }
+              return msg;
+            });
+            return null;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
+    };
+  }, [rateLimitCountdown]);
 
   const handleResendEmail = async () => {
     if (!email) {
@@ -26,11 +76,21 @@ export default function EmailConfirmationScreen() {
 
     setResending(true);
     setMessage(null);
+    setRateLimitCountdown(null);
     try {
-      const { error } = await resendConfirmationEmail(email);
+      const { error, rateLimitInfo } = await resendConfirmationEmail(email);
 
       if (error) {
-        setMessage({ type: 'error', text: error });
+        // Check if this is a rate limit error
+        if (rateLimitInfo?.isRateLimit) {
+          setRateLimitCountdown(rateLimitInfo.waitTime);
+          setMessage({ 
+            type: 'warning', 
+            text: rateLimitInfo.userFriendlyMessage 
+          });
+        } else {
+          setMessage({ type: 'error', text: error });
+        }
       } else {
         setMessage({ 
           type: 'success', 
@@ -68,8 +128,18 @@ export default function EmailConfirmationScreen() {
       {message && (
         <Message 
           type={message.type} 
-          message={message.text}
-          onDismiss={() => setMessage(null)}
+          message={
+            rateLimitCountdown !== null && rateLimitCountdown > 0
+              ? `${message.text} (${rateLimitCountdown}s)`
+              : message.text
+          }
+          duration={3000}
+          onDismiss={() => {
+            // Only clear message, but keep countdown running if it's still active
+            // The countdown will clear itself when it reaches 0
+            setMessage(null);
+            // Don't clear countdown here - let it run until it reaches 0
+          }}
         />
       )}
 
@@ -78,9 +148,20 @@ export default function EmailConfirmationScreen() {
           <ActivityIndicator size="large" color={primaryColor} />
         ) : (
           <TouchableOpacity 
-            style={[authStyles.button, { backgroundColor: primaryColor }]} 
-            onPress={handleResendEmail}>
-            <ThemedText style={authStyles.buttonText}>Resend Confirmation Email</ThemedText>
+            style={[
+              authStyles.button, 
+              { 
+                backgroundColor: primaryColor,
+                opacity: rateLimitCountdown !== null && rateLimitCountdown > 0 ? 0.5 : 1,
+              }
+            ]} 
+            onPress={handleResendEmail}
+            disabled={rateLimitCountdown !== null && rateLimitCountdown > 0}>
+            <ThemedText style={authStyles.buttonText}>
+              {rateLimitCountdown !== null && rateLimitCountdown > 0
+                ? `Please wait (${rateLimitCountdown}s)`
+                : 'Resend Confirmation Email'}
+            </ThemedText>
           </TouchableOpacity>
         )}
       </ThemedView>
