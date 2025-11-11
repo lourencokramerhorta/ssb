@@ -1,7 +1,7 @@
-import { Message } from '@/components/message';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
+import { useMessage } from '@/contexts/message-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { signUp } from '@/services/auth';
@@ -20,6 +20,7 @@ export default function RegisterScreen() {
   const [rateLimitCountdown, setRateLimitCountdown] = useState<number | null>(null);
   const navigationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const { showMessage } = useMessage();
   
   // Get theme colors for input fields
   const inputTextColor = useThemeColor({}, 'text');
@@ -59,16 +60,14 @@ export default function RegisterScreen() {
               clearInterval(countdownIntervalRef.current);
               countdownIntervalRef.current = null;
             }
-            // Clear rate limit message when countdown finishes
-            setMessage((msg) => {
-              if (msg?.type === 'warning') {
-                return null;
-              }
-              return msg;
-            });
             return null;
           }
-          return prev - 1;
+          const newCountdown = prev - 1;
+          // Update the message with new countdown
+          if (message && message.type === 'warning') {
+            showMessage('warning', `${message.text.split('(')[0].trim()} (${newCountdown}s)`);
+          }
+          return newCountdown;
         });
       }, 1000);
     }
@@ -79,6 +78,7 @@ export default function RegisterScreen() {
         countdownIntervalRef.current = null;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rateLimitCountdown]);
 
   const handleRegister = async () => {
@@ -89,16 +89,21 @@ export default function RegisterScreen() {
     const emailValidation = validateEmail(email);
     if (!emailValidation.isValid) {
       setMessage({ type: 'error', text: emailValidation.message });
+      showMessage('error', emailValidation.message);
       return;
     }
 
     if (!password || !confirmPassword) {
-      setMessage({ type: 'error', text: 'Please fill in all fields' });
+      const errorMsg = 'Please fill in all fields';
+      setMessage({ type: 'error', text: errorMsg });
+      showMessage('error', errorMsg);
       return;
     }
 
     if (password !== confirmPassword) {
-      setMessage({ type: 'error', text: 'Passwords do not match' });
+      const errorMsg = 'Passwords do not match';
+      setMessage({ type: 'error', text: errorMsg });
+      showMessage('error', errorMsg);
       return;
     }
 
@@ -106,6 +111,7 @@ export default function RegisterScreen() {
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.isValid) {
       setMessage({ type: 'error', text: passwordValidation.message });
+      showMessage('error', passwordValidation.message);
       return;
     }
 
@@ -122,8 +128,10 @@ export default function RegisterScreen() {
             type: 'warning', 
             text: rateLimitInfo.userFriendlyMessage 
           });
+          showMessage('warning', `${rateLimitInfo.userFriendlyMessage} (${rateLimitInfo.waitTime}s)`);
         } else {
           setMessage({ type: 'error', text: error });
+          showMessage('error', error);
         }
         return;
       }
@@ -139,6 +147,7 @@ export default function RegisterScreen() {
         } else {
           // Email confirmation not required, show success and navigate
           setMessage({ type: 'success', text: 'Account created successfully! Redirecting to login...' });
+          showMessage('success', 'Account created successfully! Redirecting to login...');
           
           // Navigate after showing success message
           navigationTimeoutRef.current = setTimeout(() => {
@@ -147,9 +156,12 @@ export default function RegisterScreen() {
         }
       } else {
         setMessage({ type: 'warning', text: 'Registration completed but no user data received.' });
+        showMessage('warning', 'Registration completed but no user data received.');
       }
     } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || 'An unexpected error occurred' });
+      const errorMsg = err.message || 'An unexpected error occurred';
+      setMessage({ type: 'error', text: errorMsg });
+      showMessage('error', errorMsg);
     } finally {
       setLoading(false);
     }
@@ -224,23 +236,6 @@ export default function RegisterScreen() {
         autoComplete="password"
       />
 
-      {message && (
-        <Message 
-          type={message.type} 
-          message={
-            rateLimitCountdown !== null && rateLimitCountdown > 0
-              ? `${message.text} (${rateLimitCountdown}s)`
-              : message.text
-          }
-          duration={3000}
-          onDismiss={() => {
-            // Only clear message, but keep countdown running if it's still active
-            // The countdown will clear itself when it reaches 0
-            setMessage(null);
-            // Don't clear countdown here - let it run until it reaches 0
-          }}
-        />
-      )}
 
       <ThemedView style={authStyles.buttonContainer}>
         {loading ? (

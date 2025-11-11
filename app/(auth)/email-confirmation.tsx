@@ -1,7 +1,7 @@
-import { Message } from '@/components/message';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
+import { useMessage } from '@/contexts/message-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { resendConfirmationEmail } from '@/services/auth';
 import { authStyles } from '@/styles/auth.styles';
@@ -16,6 +16,7 @@ export default function EmailConfirmationScreen() {
   const [message, setMessage] = useState<{ type: 'error' | 'success' | 'info' | 'warning'; text: string } | null>(null);
   const [rateLimitCountdown, setRateLimitCountdown] = useState<number | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const { showMessage } = useMessage();
   const colorScheme = useColorScheme() ?? 'light';
   const primaryColor = Colors[colorScheme].primary;
   const linkColor = Colors[colorScheme].primary;
@@ -46,16 +47,14 @@ export default function EmailConfirmationScreen() {
               clearInterval(countdownIntervalRef.current);
               countdownIntervalRef.current = null;
             }
-            // Clear rate limit message when countdown finishes
-            setMessage((msg) => {
-              if (msg?.type === 'warning') {
-                return null;
-              }
-              return msg;
-            });
             return null;
           }
-          return prev - 1;
+          const newCountdown = prev - 1;
+          // Update the message with new countdown
+          if (message && (message.text.toLowerCase().includes('wait') || message.text.toLowerCase().includes('second'))) {
+            showMessage(message.type, `${message.text.split('(')[0].trim()} (${newCountdown}s)`);
+          }
+          return newCountdown;
         });
       }, 1000);
     }
@@ -66,11 +65,14 @@ export default function EmailConfirmationScreen() {
         countdownIntervalRef.current = null;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rateLimitCountdown]);
 
   const handleResendEmail = async () => {
     if (!email) {
-      setMessage({ type: 'error', text: 'Email address is required' });
+      const errorMsg = 'Email address is required';
+      setMessage({ type: 'error', text: errorMsg });
+      showMessage('error', errorMsg);
       return;
     }
 
@@ -88,17 +90,23 @@ export default function EmailConfirmationScreen() {
             type: 'warning', 
             text: rateLimitInfo.userFriendlyMessage 
           });
+          showMessage('warning', `${rateLimitInfo.userFriendlyMessage} (${rateLimitInfo.waitTime}s)`);
         } else {
           setMessage({ type: 'error', text: error });
+          showMessage('error', error);
         }
       } else {
+        const successMsg = 'A new confirmation email has been sent to your inbox. Please check your email and click the confirmation link.';
         setMessage({ 
           type: 'success', 
-          text: 'A new confirmation email has been sent to your inbox. Please check your email and click the confirmation link.' 
+          text: successMsg 
         });
+        showMessage('success', successMsg);
       }
     } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || 'Failed to resend confirmation email' });
+      const errorMsg = err.message || 'Failed to resend confirmation email';
+      setMessage({ type: 'error', text: errorMsg });
+      showMessage('error', errorMsg);
     } finally {
       setResending(false);
     }
@@ -125,23 +133,6 @@ export default function EmailConfirmationScreen() {
         </ThemedText>
       </ThemedView>
 
-      {message && (
-        <Message 
-          type={message.type} 
-          message={
-            rateLimitCountdown !== null && rateLimitCountdown > 0
-              ? `${message.text} (${rateLimitCountdown}s)`
-              : message.text
-          }
-          duration={3000}
-          onDismiss={() => {
-            // Only clear message, but keep countdown running if it's still active
-            // The countdown will clear itself when it reaches 0
-            setMessage(null);
-            // Don't clear countdown here - let it run until it reaches 0
-          }}
-        />
-      )}
 
       <ThemedView style={authStyles.buttonContainer}>
         {resending ? (
