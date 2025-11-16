@@ -1,8 +1,7 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Colors } from '@/constants/theme';
 import { useMessage } from '@/contexts/message-context';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useColors } from '@/hooks/use-colors';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { signUp } from '@/services/auth';
 import { authStyles } from '@/styles/auth.styles';
@@ -27,9 +26,7 @@ export default function RegisterScreen() {
   const inputBackgroundColor = useThemeColor({}, 'background');
   const inputBorderColor = useThemeColor({}, 'border');
   const placeholderTextColor = useThemeColor({}, 'placeholder');
-  const colorScheme = useColorScheme() ?? 'light';
-  const primaryColor = Colors[colorScheme].primary;
-  const linkColor = Colors[colorScheme].primary;
+  const colors = useColors();
 
   // Cleanup timeouts on unmount
   useEffect(() => {
@@ -239,13 +236,13 @@ export default function RegisterScreen() {
 
       <ThemedView style={authStyles.buttonContainer}>
         {loading ? (
-          <ActivityIndicator size="large" color={primaryColor} />
+          <ActivityIndicator size="large" color={colors.primary} />
         ) : (
           <TouchableOpacity 
             style={[
               authStyles.button, 
               { 
-                backgroundColor: primaryColor,
+                backgroundColor: colors.primary,
                 opacity: rateLimitCountdown !== null && rateLimitCountdown > 0 ? 0.5 : 1,
               }
             ]} 
@@ -261,7 +258,7 @@ export default function RegisterScreen() {
       </ThemedView>
 
       <ThemedText
-        style={[authStyles.link, { color: linkColor }]}
+        style={[authStyles.link, { color: colors.primary }]}
         onPress={() => router.push('/(auth)/login')}>
         Already have an account? Login
       </ThemedText>
