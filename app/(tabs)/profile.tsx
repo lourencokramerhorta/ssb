@@ -1,9 +1,8 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Colors } from '@/constants/theme';
 import { useMessage } from '@/contexts/message-context';
 import { useAuth } from '@/hooks/use-auth';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useColors } from '@/hooks/use-colors';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { getProfile, upsertProfile } from '@/services/profile';
 import { uploadAvatar } from '@/services/storage';
@@ -12,12 +11,12 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    ScrollView,
-    StyleSheet,
-    TextInput,
-    TouchableOpacity
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity
 } from 'react-native';
 
 export default function ProfileScreen() {
@@ -36,8 +35,7 @@ export default function ProfileScreen() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const { showMessage } = useMessage();
 
-  const colorScheme = useColorScheme() ?? 'light';
-  const primaryColor = Colors[colorScheme].primary;
+  const colors = useColors();
   const inputTextColor = useThemeColor({}, 'text');
   const inputBackgroundColor = useThemeColor({}, 'background');
   const inputBorderColor = useThemeColor({}, 'border');
@@ -194,7 +192,7 @@ export default function ProfileScreen() {
   if (loading) {
     return (
       <ThemedView style={commonStyles.centeredContainer}>
-        <ActivityIndicator size="large" color={primaryColor} />
+        <ActivityIndicator size="large" color={colors.primary} />
       </ThemedView>
     );
   }
@@ -213,7 +211,7 @@ export default function ProfileScreen() {
             disabled={!isEditing || uploadingAvatar}
             style={styles.avatarContainer}>
             {uploadingAvatar ? (
-              <ActivityIndicator size="large" color={primaryColor} />
+              <ActivityIndicator size="large" color={colors.primary} />
             ) : avatarUrl ? (
               <Image
                 source={{ uri: avatarUrl }}
@@ -322,7 +320,7 @@ export default function ProfileScreen() {
                 <ThemedText style={styles.cancelButtonText}>Cancel</ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.button, { backgroundColor: primaryColor }]}
+                style={[styles.button, { backgroundColor: colors.primary }]}
                 onPress={handleSave}
                 disabled={saving}>
                 {saving ? (
@@ -334,7 +332,7 @@ export default function ProfileScreen() {
             </>
           ) : (
             <TouchableOpacity
-              style={[styles.button, { backgroundColor: primaryColor }]}
+              style={[styles.button, { backgroundColor: colors.primary }]}
               onPress={() => setIsEditing(true)}>
               <ThemedText style={commonStyles.primaryButtonText}>Edit Profile</ThemedText>
             </TouchableOpacity>

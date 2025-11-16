@@ -46,3 +46,6 @@ app-example
 # backup files
 *.backup
 app.json.backup
+
+# Supabase CLI cache
+supabase/.temp/

@@ -1,28 +1,26 @@
 import { Image } from 'expo-image';
 import { Platform, StyleSheet } from 'react-native';
 
-import { Collapsible } from '@/components/ui/collapsible';
 import { ExternalLink } from '@/components/external-link';
 import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Fonts, Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Collapsible } from '@/components/ui/collapsible';
+import { IconSymbol, Icons } from '@/components/ui/icon-symbol';
+import { Fonts } from '@/constants/theme';
+import { useColors } from '@/hooks/use-colors';
 
 export default function TabTwoScreen() {
-  const colorScheme = useColorScheme() ?? 'light';
-  const headerBgColor = Colors[colorScheme].headerBg;
-  const iconColor = Colors[colorScheme].icon;
+  const colors = useColors();
 
   return (
     <ParallaxScrollView
-      headerBackgroundColor={{ light: headerBgColor, dark: headerBgColor }}
+      headerBackgroundColor={{ light: colors.headerBg, dark: colors.headerBg }}
       headerImage={
         <IconSymbol
           size={310}
-          color={iconColor}
-          name="chevron.left.forwardslash.chevron.right"
+          icon={Icons.Code}
+          color={colors.icon}
           style={styles.headerImage}
         />
       }>
